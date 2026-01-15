@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Presupuesto GNC · Quirgroup (A4 1 hoja)</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Opción A (PDF automático) -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <style>
+    :root{
+      --yellow:#FED832;
+      --black:#1a1a1a;
+      --gray:#f1f1f1;
+      --text:#1a1a1a;
+      --line:#bdbdbd;
+
+      /* escala global */
+      --s: 0.95; /* si se parte: 0.94 / 0.93 */
+      --printShiftY: 8mm; /* baja todo en impresión para evitar que se corte arriba */
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      background:#f3f3f3;
+      color:var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    .topbar{
+      position:sticky; top:0; z-index:20;
+      display:flex; gap:10px; align-items:center; justify-content:center;
+      padding:10px 12px;
+      background:#ffffffd9;
+      backdrop-filter: blur(8px);
+      border-bottom:1px solid #ddd;
+      flex-wrap:wrap;
+    }
+    .btn{
+      border:1px solid var(--black);
+      background:#fff;
+      padding:8px 12px;
+      border-radius:12px;
+      font-weight:900;
+      cursor:pointer;
+      color:var(--black);
+    }
+    .btn.primary{ background:var(--yellow); }
+    .hint{ font-size:12px; color:#333; }
+
+    .preview{
+      width: 920px;
+      margin: 18px auto 28px;
+      background:#fff;
+      border:1px solid #dedede;
+      box-shadow:0 14px 35px rgba(0,0,0,.12);
+      overflow:hidden;
+    }
+
+    /* Hoja A4 */
+    .content{
+      width:210mm;
+      margin:0 auto;
+      background:#fff;
+    }
+
+    /* ===== Header ===== */
+    .hero{ background: var(--yellow); }
+
+    /* FIX LOGO: área más alta + menos padding + max-height real */
+    .logo-area{
+      height: calc(35mm * var(--s));  /* antes 20mm (te lo hacía chiquito) */
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: calc(4mm * var(--s)) calc(8mm * var(--s)) calc(3mm * var(--s));
+      background: var(--yellow);
+    }
+    .logo{
+      width: 96%;
+      max-width: 96%;
+      height:auto;
+      max-height: calc(100mm * var(--s));
+      object-fit:contain;
+      display:block;
+    }
+
+    .title-band{
+      background: linear-gradient(180deg, #2b2b2b 0%, #0e0e0e 100%);
+      color:#fff;
+      text-align:center;
+      padding: calc(5mm * var(--s)) calc(5mm * var(--s)) calc(4.5mm * var(--s));
+    }
+    .t1{
+      font-family: Montserrat, Inter, Arial, sans-serif;
+      font-weight:900;
+      letter-spacing: calc(1px * var(--s));
+      font-size: calc(16.2mm * var(--s));
+      margin:0;
+      line-height:1.03;
+      text-transform:uppercase;
+    }
+    .t2{
+      font-family: Montserrat, Inter, Arial, sans-serif;
+      font-weight:800;
+      letter-spacing: calc(.5px * var(--s));
+      font-size: calc(7.0mm * var(--s));
+      margin: calc(1.6mm * var(--s)) 0 0;
+      text-transform:uppercase;
+      opacity:.96;
+    }
+
+    .meta-band{
+      background:var(--yellow);
+      padding: calc(2.6mm * var(--s)) calc(6mm * var(--s)) calc(2.8mm * var(--s));
+      display:flex;
+      justify-content:center;
+      gap: calc(10mm * var(--s));
+      align-items:center;
+      font-family: Montserrat, Inter, Arial, sans-serif;
+      font-weight:800;
+      font-size: calc(5.0mm * var(--s));
+      color:var(--black);
+      box-shadow: inset 0 -1px 0 rgba(0,0,0,.18);
+    }
+    .meta-dot{
+      width: calc(1.4mm * var(--s));
+      height: calc(1.4mm * var(--s));
+      border-radius:99px;
+      background:var(--black);
+      opacity:.85;
+    }
+
+    /* Body */
+    .wrap{
+      padding: calc(4.0mm * var(--s)) calc(8.5mm * var(--s)) calc(3.0mm * var(--s));
+    }
+
+    .sep-title{
+      margin: calc(3.0mm * var(--s)) 0 calc(1.4mm * var(--s));
+      display:flex; align-items:center; justify-content:center; gap: calc(4mm * var(--s));
+      font-family: Montserrat, Inter, Arial, sans-serif;
+      font-weight:800;
+      letter-spacing: calc(1px * var(--s));
+      text-transform:uppercase;
+      color:var(--black);
+      font-size: calc(5.0mm * var(--s));
+    }
+    .sep-title:before,.sep-title:after{
+      content:"";
+      height: calc(0.45mm * var(--s));
+      background:#cfcfcf;
+      flex:1;
+    }
+
+    .price{ text-align:center; padding:0; }
+    .price .value{
+      font-family: Montserrat, Inter, Arial, sans-serif;
+      font-weight:900;
+      letter-spacing: calc(1px * var(--s));
+      font-size: calc(15.0mm * var(--s));
+      margin: calc(0.8mm * var(--s)) 0 calc(1.2mm * var(--s));
+      color:var(--black);
+    }
+    .price-bar{
+      width:100%;
+      background: var(--yellow);
+      border-radius: calc(1.2mm * var(--s));
+      padding: calc(2.0mm * var(--s)) calc(3.5mm * var(--s));
+      font-family: Montserrat, Inter, Arial, sans-serif;
+      font-weight:800;
+      font-size: calc(5.0mm * var(--s));
+      display:flex; justify-content:center; gap: calc(3mm * var(--s)); align-items:center;
+      color:var(--black);
+      box-shadow: inset 0 -1px 0 rgba(0,0,0,.18), inset 0 0 0 calc(0.3mm * var(--s)) rgba(0,0,0,.08);
+    }
+
+    .two-cols{
+      display:grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: calc(3mm * var(--s));
+      margin-top: calc(1.2mm * var(--s));
+    }
+
+    .box,.box-right,.card,.bb{
+      border: calc(0.32mm * var(--s)) solid var(--line);
+      background:#fff;
+    }
+
+    .box .head{
+      background: var(--yellow);
+      color:var(--black);
+      padding: calc(1.8mm * var(--s)) calc(2.4mm * var(--s));
+      font-family: Montserrat, Inter, Arial, sans-serif;
+      font-weight:900;
+      text-transform:uppercase;
+      display:flex; justify-content:space-between; align-items:center;
+      font-size: calc(4.3mm * var(--s));
+      border-bottom: calc(0.32mm * var(--s)) solid var(--line);
+    }
+    .box .body{
+      background: var(--gray);
+      padding: calc(2.0mm * var(--s)) calc(2.4mm * var(--s)) calc(2.0mm * var(--s));
+      font-size: calc(4.3mm * var(--s));
+      line-height:1.1;
+      font-weight:650;
+      color:var(--black);
+    }
+    .box .body .muted{
+      display:block;
+      margin-top: calc(0.6mm * var(--s));
+      font-size: calc(3.7mm * var(--s));
+      color:#5f5f5f;
+      font-weight:750;
+    }
+
+    .box-right .row{
+      display:flex; justify-content:space-between; align-items:center;
+      padding: calc(2.0mm * var(--s)) calc(2.4mm * var(--s));
+      background: var(--gray);
+      font-size: calc(4.4mm * var(--s));
+      border-bottom: calc(0.32mm * var(--s)) solid #d5d5d5;
+      font-weight:650;
+      color:var(--black);
+    }
+    .box-right .row:last-child{ border-bottom:none; }
+
+    .money{
+      font-family: Montserrat, Inter, Arial, sans-serif;
+      font-weight:900;
+      white-space:nowrap;
+      color:var(--black);
+    }
+
+    .cards{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: calc(3mm * var(--s));
+      margin-top: calc(1.2mm * var(--s));
+    }
+    .card .card-head{
+      background: var(--yellow);
+      color:var(--black);
+      padding: calc(1.8mm * var(--s)) calc(2.4mm * var(--s));
+      border-bottom: calc(0.32mm * var(--s)) solid var(--line);
+      display:flex; align-items:center; gap: calc(2mm * var(--s));
+      font-family: Montserrat, Inter, Arial, sans-serif;
+      font-weight:900;
+      font-size: calc(4.4mm * var(--s));
+    }
+    .chip{
+      background:var(--black);
+      color:#fff;
+      border-radius: calc(1mm * var(--s));
+      font-size: calc(2.5mm * var(--s));
+      padding: calc(0.7mm * var(--s)) calc(1mm * var(--s));
+      font-weight:900;
+      letter-spacing: calc(.5px * var(--s));
+      text-transform:uppercase;
+    }
+    .card .card-body{ background: var(--gray); padding: calc(1.4mm * var(--s)) calc(2.4mm * var(--s)) calc(1.6mm * var(--s)); }
+    .card .line{
+      display:flex; justify-content:space-between; align-items:center;
+      font-size: calc(4.4mm * var(--s));
+      padding: calc(1.2mm * var(--s)) 0;
+      border-bottom: calc(0.32mm * var(--s)) solid #d7d7d7;
+      font-weight:700;
+      color:var(--black);
+    }
+    .card .line:last-child{ border-bottom:none; }
+    .card .sub{
+      margin-top: calc(0.8mm * var(--s));
+      font-size: calc(3.4mm * var(--s));
+      font-weight:800;
+      color:#2c2c2c;
+    }
+    .center-note{
+      text-align:center;
+      font-size: calc(3.3mm * var(--s));
+      font-weight:650;
+      margin: calc(1.0mm * var(--s)) 0 0;
+      color:#2b2b2b;
+    }
+
+    .includes{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: calc(6mm * var(--s));
+      padding: calc(0.6mm * var(--s)) 0 0;
+    }
+    .ul{
+      list-style:none; padding:0; margin:0;
+      font-size: calc(4.1mm * var(--s));
+      line-height:1.1;
+      font-weight:650;
+      color:var(--black);
+    }
+    .ul li{ display:flex; gap: calc(2.0mm * var(--s)); align-items:flex-start; margin: calc(1.4mm * var(--s)) 0; }
+    .dot{
+      width: calc(2mm * var(--s));
+      height: calc(2mm * var(--s));
+      border-radius:99px;
+      background: var(--yellow);
+      margin-top: calc(1.6mm * var(--s));
+      box-shadow: inset 0 0 0 calc(0.28mm * var(--s)) rgba(0,0,0,.18);
+      flex:0 0 calc(2mm * var(--s));
+    }
+    .ul b{ font-weight:900; }
+
+    .bottom-boxes{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: calc(3mm * var(--s));
+      margin-top: calc(1.4mm * var(--s));
+    }
+    .bb .bb-head{
+      background: var(--yellow);
+      color:var(--black);
+      padding: calc(1.8mm * var(--s)) calc(2.4mm * var(--s));
+      border-bottom: calc(0.32mm * var(--s)) solid var(--line);
+      font-family: Montserrat, Inter, Arial, sans-serif;
+      font-weight:900;
+      text-transform:uppercase;
+      font-size: calc(3.9mm * var(--s));
+    }
+    .bb .bb-body{
+      background: var(--gray);
+      padding: calc(1.4mm * var(--s)) calc(2.4mm * var(--s)) calc(1.6mm * var(--s));
+      font-size: calc(3.8mm * var(--s));
+      line-height:1.1;
+      font-weight:700;
+      color:var(--black);
+    }
+    .bb .bb-body .p{ margin: calc(0.9mm * var(--s)) 0; display:flex; gap: calc(2mm * var(--s)); align-items:flex-start; }
+
+    .contact-band{
+      margin-top: calc(1.4mm * var(--s));
+      background: var(--yellow);
+      border-top: calc(0.32mm * var(--s)) solid var(--line);
+      border-bottom: calc(0.32mm * var(--s)) solid var(--line);
+      display:grid;
+      grid-template-columns: 1fr 1.2fr 1fr;
+      align-items:center;
+      padding: calc(1.4mm * var(--s)) calc(1.8mm * var(--s));
+      font-family: Montserrat, Inter, Arial, sans-serif;
+      font-weight:900;
+      font-size: calc(4.2mm * var(--s));
+      color:var(--black);
+      box-shadow: inset 0 -1px 0 rgba(0,0,0,.18);
+    }
+    .cb{ display:flex; align-items:center; justify-content:center; gap: calc(2mm * var(--s)); padding: calc(0.6mm * var(--s)) calc(2mm * var(--s)); }
+    .cb.mid{
+      border-left: calc(0.32mm * var(--s)) solid rgba(0,0,0,.18);
+      border-right: calc(0.32mm * var(--s)) solid rgba(0,0,0,.18);
+      flex-direction:column;
+      gap: calc(0.5mm * var(--s));
+      font-weight:800;
+    }
+    .cb .mini{
+      font-family: Inter, Arial, sans-serif;
+      font-weight:750;
+      font-size: calc(3.7mm * var(--s));
+      line-height:1.08;
+      text-align:center;
+      color:var(--black);
+    }
+
+    .footer{
+      background: linear-gradient(180deg, #2a2a2a, #111);
+      color:#fff;
+      padding: calc(1.5mm * var(--s)) calc(4mm * var(--s));
+      display:flex; align-items:center; justify-content:center; gap: calc(3mm * var(--s));
+      font-family: Montserrat, Inter, Arial, sans-serif;
+      font-weight:850;
+      font-size: calc(4.2mm * var(--s));
+      letter-spacing: calc(.3px * var(--s));
+    }
+
+    /* Editable */
+    [contenteditable="true"]{
+      outline:none;
+      box-shadow: inset 0 0 0 calc(0.55mm * var(--s)) rgba(0,0,0,.12);
+      border-radius: calc(1.4mm * var(--s));
+      padding: calc(0.2mm * var(--s)) calc(1mm * var(--s));
+      display:inline-block;
+      min-width: calc(9mm * var(--s));
+    }
+    .locked [contenteditable="true"]{ box-shadow:none; padding:0; }
+
+    /* ===== PRINT ===== */
+    @page { size: A4; margin: 0; }
+    @media print{
+      html, body{ margin:0 !important; padding:0 !important; background:#fff !important; }
+      *{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      .topbar{ display:none !important; }
+      .preview{ width:210mm; margin:0; border:none; box-shadow:none; overflow:visible; }
+      .content{
+        width:210mm;
+        margin:0;
+        overflow:visible;
+        position:relative;
+        top: var(--printShiftY);
+      }
+
+      .hero, .two-cols, .cards, .includes, .bottom-boxes, .contact-band, .footer{
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      [contenteditable="true"]{ box-shadow:none; padding:0; }
+    }
+
+    @media (max-width: 960px){
+      .preview{ width:100%; }
+    }
+  </style>
+</head>
+
+<body class="locked">
+  <div class="topbar">
+    <button class="btn" id="toggleEdit">Editar</button>
+    <button class="btn primary" id="printBtn">Imprimir</button>
+    <button class="btn" id="tightBtn">Apretar más</button>
+
+    <!-- Opción A -->
+    <button class="btn" id="logoBtn">Cargar logo</button>
+    <button class="btn primary" id="pdfAutoBtn">Descargar PDF</button>
+
+    <span class="hint">El logo se guarda en el navegador. (Recomendado: usar Live Server)</span>
+    <input id="logoFile" type="file" accept="image/*" style="display:none">
+  </div>
+
+  <div class="preview">
+    <div class="content" id="content">
+
+      <div class="hero">
+        <div class="logo-area">
+          <!-- Se rellena con base64 si cargás logo -->
+          <img class="logo" id="logoImg" src="./ChatGPT Image 14 ene 2026, 04_12_24 p.m..png" alt="QUIRGROUP">
+        </div>
+
+        <div class="title-band">
+          <h1 class="t1">PRESUPUESTO GNC</h1>
+          <div class="t2"><span contenteditable="true" data-k="vehiculoTitle">VENTO 2.5 (5 CIL)</span></div>
+        </div>
+
+        <div class="meta-band">
+          <div>Asesor: <span contenteditable="true" data-k="asesor">5TA – 16 MTS</span></div>
+          <span class="meta-dot"></span>
+          <div>Fecha: <span contenteditable="true" data-k="fecha">09/01/2026</span></div>
+        </div>
+      </div>
+
+      <div class="wrap">
+        <div class="sep-title">PRECIO DESTACADO</div>
+        <div class="price">
+          <div class="value">$<span contenteditable="true" data-k="precioDestacado">1.762.000</span></div>
+          <div class="price-bar">
+            <span>Pago en efectivo</span>
+            <span style="font-weight:900;">➜</span>
+            <span>La opción más conveniente</span>
+          </div>
+        </div>
+
+        <div class="sep-title" style="margin-top:calc(3.4mm * var(--s));">OTRAS FORMAS DE PAGO</div>
+        <div class="two-cols">
+          <div class="box">
+            <div class="head">
+              <span>PRECIO DE LISTA ▶</span>
+              <span class="money">$<span contenteditable="true" data-k="precioLista">2.178.500</span></span>
+            </div>
+            <div class="body">
+              Hasta 6 cuotas sin interés
+              <span class="muted">Pago mixto (efectivo + cuotas) disponible</span>
+            </div>
+          </div>
+
+          <div class="box-right">
+            <div class="row">
+              <span>Promo 3 cuotas</span>
+              <span class="money">$<span contenteditable="true" data-k="promo3">2.014.400</span></span>
+            </div>
+            <div class="row">
+              <span>Débito/ Transferencia</span>
+              <span class="money">$<span contenteditable="true" data-k="debito">1.926.060</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sep-title" style="margin-top:calc(3.4mm * var(--s));">TARJETAS (OPCIONES RECOMENDADAS)</div>
+        <div class="cards">
+          <div class="card">
+            <div class="card-head">
+              <span class="chip">TARJ BANC</span>
+              <span>Cordobesa</span>
+            </div>
+            <div class="card-body">
+              <div class="line">
+                <span>6 cuotas sin interés →</span>
+                <span class="money">$<span contenteditable="true" data-k="cordo6">363.083</span></span>
+              </div>
+              <div class="sub">Pago mixto (efectivo + cuotas) disponible</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span class="chip" style="background:#f07a2b;">MARCA</span>
+              <span>TARJETA Naranja</span>
+            </div>
+            <div class="card-body">
+              <div class="line">
+                <span>6 cuotas sin interés →</span>
+                <span class="money">$<span contenteditable="true" data-k="naranja6">363.083</span></span>
+              </div>
+              <div class="line">
+                <span>8 cuotas sin interés →</span>
+                <span class="money">$<span contenteditable="true" data-k="naranja8">272.313</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="center-note">(Consultá por combinaciones de pago)</div>
+
+        <div class="sep-title" style="margin-top:calc(3.4mm * var(--s));">EL PRESUPUESTO INCLUYE</div>
+        <div class="includes">
+          <ul class="ul">
+            <li><span class="dot"></span><span><b>Equipo</b> completo con válvula eléctrica</span></li>
+            <li><span class="dot"></span><span><b>Carga externa</b> bonificada</span></li>
+            <li><span class="dot"></span><span><b>Cilindros</b> nuevos homologados</span></li>
+            <li><span class="dot"></span><span><b>Cubre</b> cilindro</span></li>
+          </ul>
+          <ul class="ul">
+            <li><span class="dot"></span><span><b> Revision Encendido</b> (bujías, bobina, cables)</span></li>
+            <li><span class="dot"></span><span><b> Revision Ralenti</b>, aceleración y desaceleración</span></li>
+            <li><span class="dot"></span><span><b>Oblea GNC</b> vigente por 1 año</span></li>
+          </ul>
+        </div>
+
+        <div class="bottom-boxes">
+          <div class="bb">
+            <div class="bb-head">✔ CONTROL MECÁNICO SIN CARGO</div>
+            <div class="bb-body">
+              <div class="p">• <span><b>Encendido</b> (bujías, bobina, cables)</span></div>
+              <div class="p">• <span><b>Ralenti</b>, aceleración y desaceleración</span></div>
+              <div class="p">• <span><b>Diagnostico</b> computarizado <span style="font-size:calc(3.1mm * var(--s)); color:#6b6b6b; font-weight:800;">si hay Check Engine</span></span></div>
+            </div>
+          </div>
+
+          <div class="bb">
+            <div class="bb-head">🕒 IMPORTANTE</div>
+            <div class="bb-body">
+              <div class="p">• <span>Precio válido por tiempo limitado</span></div>
+              <div class="p">• <span>Cupos diarios sujetos a <b>disponibilidad</b></span></div>
+              <div class="p">• <span>Turno confirmado con seña</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="contact-band">
+          <div class="cb">
+            <div style="text-align:center;">
+              <div style="font-size:calc(4.4mm * var(--s));">CONTACTO</div>
+              <div class="mini">(<span contenteditable="true" data-k="telA">351</span>) <span contenteditable="true" data-k="tel1">217-4455</span></div>
+            </div>
+          </div>
+
+          <div class="cb mid">
+            <div class="mini"><span contenteditable="true" data-k="dir1">Av. Leandro N. Alem 642</span></div>
+            <div class="mini"><span contenteditable="true" data-k="dir2">Zipoli 176 (Esq. Colón)</span></div>
+          </div>
+
+          <div class="cb">
+            <div style="text-align:center;">
+              <div style="font-size:calc(4.4mm * var(--s)); opacity:0;">.</div>
+              <div class="mini">(<span contenteditable="true" data-k="telB">351</span>) <span contenteditable="true" data-k="tel2">255-3456</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer">
+          🌐 <span contenteditable="true" data-k="web">quirgroupgnc.com.ar</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const body = document.body;
+
+    function setEditable(on){
+      body.classList.toggle("locked", !on);
+      document.querySelectorAll("[data-k]").forEach(el=>{
+        el.setAttribute("contenteditable", on ? "true" : "false");
+      });
+      document.getElementById("toggleEdit").textContent = on ? "Bloquear" : "Editar";
+    }
+
+    function setScale(v){
+      document.documentElement.style.setProperty("--s", String(v));
+      localStorage.setItem("presupuesto_scale", String(v));
+    }
+    function getScale(){
+      const v = parseFloat(localStorage.getItem("presupuesto_scale") || "");
+      return Number.isFinite(v) ? v : null;
+    }
+
+    function parseMoneyAR(text){
+      const s = String(text || "").trim()
+        .replace(/\$/g,"")
+        .replace(/\./g,"")
+        .replace(/,/g,".")
+        .replace(/\s+/g,"");
+      const n = parseFloat(s);
+      return Number.isFinite(n) ? n : 0;
+    }
+    function formatMoneyAR(n){
+      const v = Math.round((Number(n)||0));
+      return v.toLocaleString("es-AR");
+    }
+    function setTextByKey(key, value){
+      const el = document.querySelector(`[data-k="${key}"]`);
+      if(el) el.textContent = value;
+    }
+    function getTextByKey(key){
+      const el = document.querySelector(`[data-k="${key}"]`);
+      return el ? el.textContent : "";
+    }
+
+    // ======= FORMULAS (replica del Excel) =======
+    // Base = PRECIO DE LISTA
+    // promo3 = precioLista * (1 + recargoPromo3)
+    // debito = precioLista * (1 + recargoDebito)
+    // cordo6 cuota = (precioLista * (1 + recargoCordobesa6)) / 6
+    // naranja6 cuota = (precioLista * (1 + recargoNaranja6)) / 6
+    // naranja8 cuota = (precioLista * (1 + recargoNaranja8)) / 8
+    //
+    // IMPORTANTE: si tus recargos del Excel son otros, cambiá SOLO estos porcentajes.
+    const RECARGOS = {
+      promo3: 0.00,      // 0% (placeholder)
+      debito: 0.00,      // 0% (placeholder)
+      cordo6: 0.00,      // 0% (placeholder)
+      naranja6: 0.00,    // 0% (placeholder)
+      naranja8: 0.00     // 0% (placeholder)
+    };
+
+    function recalcularTarjetas(){
+      const precioLista = parseMoneyAR(getTextByKey("precioLista"));
+      if(!precioLista) return;
+
+      const promo3Total = precioLista * (1 + RECARGOS.promo3);
+      const debitoTotal = precioLista * (1 + RECARGOS.debito);
+
+      const cordo6Cuota = (precioLista * (1 + RECARGOS.cordo6)) / 6;
+      const naranja6Cuota = (precioLista * (1 + RECARGOS.naranja6)) / 6;
+      const naranja8Cuota = (precioLista * (1 + RECARGOS.naranja8)) / 8;
+
+      setTextByKey("promo3", formatMoneyAR(promo3Total));
+      setTextByKey("debito", formatMoneyAR(debitoTotal));
+      setTextByKey("cordo6", formatMoneyAR(cordo6Cuota));
+      setTextByKey("naranja6", formatMoneyAR(naranja6Cuota));
+      setTextByKey("naranja8", formatMoneyAR(naranja8Cuota));
+    }
+
+    // Recalcular cuando editás campos (contenteditable)
+    document.addEventListener("input", (e)=>{
+      const k = e.target?.getAttribute?.("data-k");
+      if(!k) return;
+      if(k === "precioLista"){ recalcularTarjetas(); }
+    });
+
+    // Editar
+    document.getElementById("toggleEdit").addEventListener("click", ()=>{
+      const locked = body.classList.contains("locked");
+      setEditable(locked);
+    });
+
+    // Imprimir
+    document.getElementById("printBtn").addEventListener("click", ()=>{
+      setEditable(false);
+      window.print();
+    });
+
+    // Apretar más
+    document.getElementById("tightBtn").addEventListener("click", ()=>{
+      const cur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--s")) || 0.95;
+      const next = Math.max(0.90, Math.round((cur - 0.01) * 100) / 100);
+      setScale(next);
+      alert("Escala global: " + next + " (si todavía se parte, tocá de nuevo).");
+    });
+
+    // Restaurar escala
+    const saved = getScale();
+    if(saved) setScale(saved);
+
+    // ===== LOGO BASE64 (evita problemas con html2canvas) =====
+    const logoImg = document.getElementById("logoImg");
+    const logoFile = document.getElementById("logoFile");
+    const logoBtn = document.getElementById("logoBtn");
+
+    function setLogoDataUrl(dataUrl){
+      logoImg.src = dataUrl;
+      localStorage.setItem("presupuesto_logo_dataurl", dataUrl);
+    }
+
+    const savedLogo = localStorage.getItem("presupuesto_logo_dataurl");
+    if(savedLogo){
+      logoImg.src = savedLogo;
+    }
+
+    logoBtn.addEventListener("click", ()=> logoFile.click());
+
+    logoFile.addEventListener("change", async (e)=>{
+      const file = e.target.files?.[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=> setLogoDataUrl(reader.result);
+      reader.readAsDataURL(file);
+    });
+
+    // ===== PDF AUTOMÁTICO (OPCIÓN A) =====
+    document.getElementById("pdfAutoBtn").addEventListener("click", async () => {
+      setEditable(false);
+
+      const node = document.querySelector(".content");
+      const oldWidth = node.style.width;
+      node.style.width = "210mm";
+
+      const canvas = await html2canvas(node, {
+        scale: 3,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        allowTaint: true
+      });
+
+      node.style.width = oldWidth;
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const { jsPDF } = window.jspdf;
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageW = 210;
+      const pageH = 297;
+
+      const imgW = pageW;
+      const imgH = (canvas.height * imgW) / canvas.width;
+
+      const finalH = Math.min(imgH, pageH);
+      const finalW = (canvas.width * finalH) / canvas.height;
+
+      const x = (pageW - finalW) / 2;
+      const y = (pageH - finalH) / 2;
+
+      pdf.addImage(imgData, "JPEG", x, y, finalW, finalH, undefined, "FAST");
+
+      const fecha = (document.querySelector('[data-k="fecha"]')?.textContent || "").trim().replaceAll("/","-");
+      pdf.save(`Presupuesto_GNC_${fecha || "sin_fecha"}.pdf`);
+    });
+
+    setEditable(false);
+    // primera corrida
+    recalcularTarjetas();
+  </script>
+</body>
+</html>
